@@ -1,1 +1,2 @@
-requests
+requests~=2.32.4
+tabula~=1.0.5
