@@ -2,7 +2,7 @@ name: Weekly Google Chat Message
 
 on:
   schedule:
-    - cron: '45 2 * * *'  # Runs at 2:28 AM UTC
+    - cron: '10 3 * * *'  # Runs at 2:28 AM UTC
   workflow_dispatch:     # Allow manual triggering from GitHub UI
 
 jobs:
