@@ -2,7 +2,7 @@ name: Cron Test
 
 on:
   schedule:
-    - cron: '*/1 * * * *'  # Runs every 2 minutes
+    - cron: '*/1 * * * *'  # every 1 minute
   workflow_dispatch:
 
 jobs:
@@ -10,3 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "⏰ Cron ran at $(date)"
+
