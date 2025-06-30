@@ -1,5 +1,5 @@
 services:
   - type: cron
     name: hello-chat
-    schedule: "0 9 * * 1"  # Every Monday at 9 AM UTC
+    schedule: '28 2 * * *'  # Run at 2:28 AM UTC today
     command: "python script.py"
