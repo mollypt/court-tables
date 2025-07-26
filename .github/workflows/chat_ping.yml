@@ -1,4 +1,4 @@
-name: Weekly Google Chat Message
+name: Scrape Court Schedule
 
 on:
   schedule:
