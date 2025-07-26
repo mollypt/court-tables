@@ -3,16 +3,8 @@ import requests
 import tabula
 from bs4 import BeautifulSoup
 import pandas as pd
-# webhook = os.getenv("CHAT_WEBHOOK")
-#
-# if not webhook:
-#     raise ValueError("CHAT_WEBHOOK not set!")
-#
-# message = {"text": "🤖 Hello from GitHub Actions!"}
-# response = requests.post(webhook, json=message)
-# response.raise_for_status()
-#
-# print("Message sent!")
+import smtplib
+from email.message import EmailMessage
 
 '''
 Get link to court schedule pdf 
@@ -38,46 +30,59 @@ Read first page of the PDF
 def build_table(pdf_path):
     # Read the table from the PDF on page 1 excluding header stuff
     dfs = tabula.read_pdf(pdf_path, area=[170, 0, 1000, 1000], pages=1, multiple_tables=True)
-
-    # Get first table
     df = dfs[0]
 
     # Rename columns
     df.columns = ['Case Name', 'Case No.', 'Proceeding', 'Judge', 'Room/Telephone', 'Date', 'Time', 'NA']
     df = df.drop(columns=['NA'])
-
-    # Rename df
     first_table = df
 
-    # Get tables on all pages after first
+    # Get remaining pages of schedule
     all_tables = tabula.read_pdf(pdf_path, pages='all', pandas_options={'header': None}, multiple_tables=True)
     for table in all_tables[1:]:
         table = table.drop(columns=[0, 8])
         table.columns = ['Case Name', 'Case No.', 'Proceeding', 'Judge', 'Room/Telephone', 'Date', 'Time']
         first_table = pd.concat([first_table, table], axis=0)
 
-    pd.set_option('display.max_rows', None)
     all_cases = first_table.reset_index(drop=True)
+    all_cases= all_cases.dropna(how='all')
     return all_cases
 
 def main():
     path_url = get_url()
-    table = build_table(path_url)
-    print(table.head())
-    print(table.to_csv())
 
+    is_new = False
+    with open('latest.txt', 'r+', encoding='utf-8') as file:
+        last_schedule = file.read()
+        if last_schedule != path_url:
+            is_new = True
+            file.write(str(path_url))
 
-    webhook = os.getenv("CHAT_WEBHOOK")
-    #
-    if not webhook:
-        raise ValueError("CHAT_WEBHOOK not set!")
+    if is_new:
+        table = build_table(path_url)
 
-    message = {"text": table.to_csv()}
-    response = requests.post(webhook, json=message)
-    response.raise_for_status()
+        # Compose the email
+        msg = EmailMessage()
+        week_i = path_url.find("Proceedings%2") + len("Proceedings%2")
+        week = path_url[week_i:].split('%',1)[0]
+        msg["Subject"] = f"Court Schedule {week}"
+        msg["From"] = "molly.taylor@ft.com"
+        msg["To"] = ", ".join(["molly.taylor@ft.com", "mollypt@princeton.edu"])
+        msg.set_content("Attached is the latest court schedule report.")
+        msg.add_attachment(
+            table.to_csv(index=False).encode("utf-8"),
+            maintype="text",
+            subtype="csv",
+            filename="court_report.csv"
+        )
+        # Send using Gmail SMTP
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login("molly.taylor@ft.com", "adxz qttq drvy zpnu")  # Use app password, not your real one
+            smtp.send_message(msg)
 
-    print("Message sent!")
-
+        print("Email sent with CSV attached.")
+    else:
+        print("Schedule already sent.")
 
 if __name__ == '__main__':
     main()
