@@ -2,7 +2,9 @@ name: Weekly Google Chat Message
 
 on:
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 16 * * 5'  # Friday @ 12 PM ET
+    - cron: '0 20 * * 5'  # Friday @ 4 PM ET
+    - cron: '0 13 * * 1'  # Monday @ 9 AM ET
   workflow_dispatch:     # Allow manual triggering from GitHub UI
 
 jobs:
@@ -20,6 +22,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run script
-        env:
-          CHAT_WEBHOOK: ${{ secrets.CHAT_WEBHOOK }}
         run: python script.py
